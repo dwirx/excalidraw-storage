@@ -11,7 +11,11 @@ const Toolbar = ({ currentFile, saveStatus, onSave, onExport, onImport }) => {
   const getSaveButtonText = () => {
     switch (saveStatus) {
       case 'saving':
-        return '💾 Saving...';
+        return (
+          <>
+            <span className="saving-spinner">⟳</span> Saving...
+          </>
+        );
       case 'unsaved':
         return '💾 Save *';
       default:
@@ -46,6 +50,22 @@ const Toolbar = ({ currentFile, saveStatus, onSave, onExport, onImport }) => {
       </div>
 
       <div style={{ display: 'flex', gap: '8px' }}>
+        <button
+          className="btn"
+          onClick={() => {
+            const fileName = prompt('Nama file baru:');
+            if (fileName && fileName.trim()) {
+              // We need to pass this up to parent
+              window.dispatchEvent(new CustomEvent('createNewFile', { 
+                detail: { name: fileName.trim() } 
+              }));
+            }
+          }}
+          title="New File (Ctrl+N)"
+        >
+          ➕ New
+        </button>
+
         <button
           className={getSaveButtonStyle()}
           onClick={onSave}

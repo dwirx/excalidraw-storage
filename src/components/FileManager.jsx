@@ -60,17 +60,33 @@ const FileManager = ({
           value={newFileName}
           onChange={(e) => setNewFileName(e.target.value)}
         />
+        <button 
+          type="submit" 
+          className="new-file-button"
+          disabled={!newFileName.trim()}
+        >
+          ➕ Buat File Baru
+        </button>
       </form>
 
       <div className="file-list">
         {files.length === 0 ? (
           <div style={{ 
-            padding: '20px', 
+            padding: '30px 20px', 
             textAlign: 'center', 
             color: '#888',
-            fontSize: '14px'
+            fontSize: '14px',
+            lineHeight: '1.5'
           }}>
-            Belum ada file. Buat file baru dengan mengetik nama di atas.
+            <div style={{ fontSize: '48px', marginBottom: '16px', opacity: 0.5 }}>
+              📝
+            </div>
+            <div style={{ fontWeight: '500', marginBottom: '8px' }}>
+              Belum ada file
+            </div>
+            <div style={{ fontSize: '12px' }}>
+              Buat file baru dengan mengetik nama di atas dan klik tombol "Buat File Baru"
+            </div>
           </div>
         ) : (
           files
@@ -114,10 +130,22 @@ const FileManager = ({
                       </div>
                       <div style={{ 
                         fontSize: '11px', 
-                        color: '#888', 
-                        marginTop: '2px' 
+                        color: '#999', 
+                        marginTop: '4px',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center'
                       }}>
-                        {formatDate(file.updatedAt)}
+                        <span>{formatDate(file.updatedAt)}</span>
+                        <span style={{ 
+                          fontSize: '10px',
+                          background: '#444',
+                          padding: '2px 6px',
+                          borderRadius: '10px',
+                          color: '#ccc'
+                        }}>
+                          {(file.elements || []).length} item{(file.elements || []).length !== 1 ? 's' : ''}
+                        </span>
                       </div>
                     </>
                   )}

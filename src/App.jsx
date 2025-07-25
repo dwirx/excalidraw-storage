@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Excalidraw, exportToCanvas, exportToSvg, exportToBlob } from '@excalidraw/excalidraw';
 import FileManager from './components/FileManager';
 import Toolbar from './components/Toolbar';
+import ToastContainer, { showToast } from './components/ToastContainer';
 
 const App = () => {
   const [excalidrawAPI, setExcalidrawAPI] = useState(null);
@@ -9,6 +10,7 @@ const App = () => {
   const [files, setFiles] = useState([]);
   const [saveStatus, setSaveStatus] = useState('saved'); // 'saved', 'saving', 'unsaved'
   const [initialData, setInitialData] = useState({ elements: [], appState: {} });
+  const [sidebarVisible, setSidebarVisible] = useState(true);
   // Load files from localStorage on startup
   useEffect(() => {
     const savedFiles = localStorage.getItem('excalidraw-files');
@@ -94,11 +96,11 @@ const App = () => {
       localStorage.setItem('excalidraw-last-file', currentFile.id);
       
       setSaveStatus('saved');
-      console.log(`File "${currentFile.name}" berhasil disimpan`);
+      showToast(`File "${currentFile.name}" berhasil disimpan`, 'success');
     } catch (error) {
       console.error('Save error:', error);
       setSaveStatus('unsaved');
-      alert('Gagal menyimpan file');
+      showToast('Gagal menyimpan file', 'error');
     }
   }, [currentFile, excalidrawAPI]);
 
@@ -117,7 +119,8 @@ const App = () => {
   }, [files]);
 
   const deleteFile = useCallback((fileId) => {
-    if (window.confirm('Apakah Anda yakin ingin menghapus file ini?')) {
+    const file = files.find(f => f.id === fileId);
+    if (file && window.confirm(`Apakah Anda yakin ingin menghapus file "${file.name}"?`)) {
       setFiles(prev => prev.filter(file => file.id !== fileId));
       
       if (currentFile && currentFile.id === fileId) {
@@ -125,8 +128,10 @@ const App = () => {
         setInitialData({ elements: [], appState: {} });
         setSaveStatus('saved');
       }
+      
+      showToast(`File "${file.name}" berhasil dihapus`, 'success');
     }
-  }, [currentFile]);
+  }, [currentFile, files]);
 
   const duplicateFile = useCallback((fileId) => {
     const file = files.find(f => f.id === fileId);
@@ -141,6 +146,7 @@ const App = () => {
     };
 
     setFiles(prev => [...prev, duplicatedFile]);
+    showToast(`File "${file.name}" berhasil diduplikasi`, 'success');
   }, [files]);
 
   const renameFile = useCallback((fileId, newName) => {
@@ -176,11 +182,12 @@ const App = () => {
             canvas.toBlob((canvasBlob) => {
               if (canvasBlob) {
                 downloadBlob(canvasBlob, `${currentFile.name}.png`);
+                showToast(`File berhasil diekspor sebagai ${currentFile.name}.png`, 'success');
               }
             });
           } catch (error) {
             console.error('PNG export error:', error);
-            alert('Gagal mengekspor sebagai PNG');
+            showToast('Gagal mengekspor sebagai PNG', 'error');
           }
           return;
 
@@ -195,7 +202,7 @@ const App = () => {
             filename = `${currentFile.name}.svg`;
           } catch (error) {
             console.error('SVG export error:', error);
-            alert('Gagal mengekspor sebagai SVG');
+            showToast('Gagal mengekspor sebagai SVG', 'error');
             return;
           }
           break;
@@ -216,7 +223,7 @@ const App = () => {
             filename = `${currentFile.name}.excalidraw`;
           } catch (error) {
             console.error('Excalidraw export error:', error);
-            alert('Gagal mengekspor sebagai .excalidraw');
+            showToast('Gagal mengekspor sebagai .excalidraw', 'error');
             return;
           }
           break;
@@ -227,10 +234,11 @@ const App = () => {
 
       if (blob && filename) {
         downloadBlob(blob, filename);
+        showToast(`File berhasil diekspor sebagai ${filename}`, 'success');
       }
     } catch (error) {
       console.error('General export error:', error);
-      alert('Terjadi kesalahan saat mengekspor file');
+      showToast('Terjadi kesalahan saat mengekspor file', 'error');
     }
   }, [excalidrawAPI, currentFile]);
 
@@ -286,12 +294,13 @@ const App = () => {
           setSaveStatus('saved');
           
           console.log(`File "${fileName}" berhasil diimpor`);
+          showToast(`File "${fileName}" berhasil diimpor`, 'success');
         } else {
-          alert('Format file tidak didukung. Hanya file .excalidraw yang dapat diimpor.');
+          showToast('Format file tidak didukung. Hanya file .excalidraw yang dapat diimpor.', 'error');
         }
       } catch (error) {
         console.error('Import error:', error);
-        alert('Terjadi kesalahan saat mengimpor file. Pastikan file adalah format .excalidraw yang valid.');
+        showToast('Terjadi kesalahan saat mengimpor file. Pastikan file adalah format .excalidraw yang valid.', 'error');
       }
     };
     reader.readAsText(file);
@@ -345,6 +354,12 @@ const App = () => {
           newFileInput.focus();
         }
       }
+
+      // Ctrl+B to toggle sidebar
+      if (e.ctrlKey && e.key === 'b') {
+        e.preventDefault();
+        setSidebarVisible(prev => !prev);
+      }
     };
 
     document.addEventListener('keydown', handleKeyDown);
@@ -358,11 +373,32 @@ const App = () => {
     }
   }, [currentFile, saveStatus]);
 
+  // Listen for createNewFile events from toolbar
+  useEffect(() => {
+    const handleCreateNewFileEvent = (event) => {
+      createNewFile(event.detail.name);
+    };
+
+    window.addEventListener('createNewFile', handleCreateNewFileEvent);
+    return () => window.removeEventListener('createNewFile', handleCreateNewFileEvent);
+  }, [createNewFile]);
+
   return (
     <div className="app-container">
-      <div className="sidebar">
+      <button 
+        className={`sidebar-toggle ${sidebarVisible ? 'sidebar-visible' : ''}`}
+        onClick={() => setSidebarVisible(!sidebarVisible)}
+        title={`${sidebarVisible ? 'Hide' : 'Show'} Sidebar (Ctrl+B)`}
+      >
+        {sidebarVisible ? '◀' : '▶'}
+      </button>
+
+      <div className={`sidebar ${sidebarVisible ? '' : 'hidden'}`}>
         <div className="sidebar-header">
           <h2 className="sidebar-title">Excalidraw Files</h2>
+          <p className="sidebar-subtitle">
+            {files.length} file{files.length !== 1 ? 's' : ''} • Manage your drawings
+          </p>
         </div>
         <FileManager
           files={files}
@@ -375,7 +411,7 @@ const App = () => {
         />
       </div>
 
-      <div className="main-content">
+      <div className={`main-content ${!sidebarVisible ? 'sidebar-hidden' : ''}`}>
         <Toolbar
           currentFile={currentFile}
           saveStatus={saveStatus}
@@ -394,6 +430,7 @@ const App = () => {
           />
         </div>
       </div>
+      <ToastContainer />
     </div>
   );
 };
