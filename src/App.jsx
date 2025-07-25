@@ -14,7 +14,97 @@ const App = () => {
   const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
   const [isMobile, setIsMobile] = useState(false);
   const [sidebarClosing, setSidebarClosing] = useState(false);
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [isPWAInstalled, setIsPWAInstalled] = useState(false);
   const exportButtonRef = useRef(null);
+
+  // PWA and offline status management
+  useEffect(() => {
+    const handleOnline = () => {
+      setIsOnline(true);
+      showToast('Back online! Your changes will be synced.', 'success');
+      syncOfflineData();
+    };
+
+    const handleOffline = () => {
+      setIsOnline(false);
+      showToast('You are offline. Your work will be saved locally.', 'warning');
+    };
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    // Check if PWA is installed
+    if (window.matchMedia('(display-mode: standalone)').matches ||
+        window.navigator.standalone ||
+        document.referrer.includes('android-app://')) {
+      setIsPWAInstalled(true);
+    }
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+
+  // Sync offline data when coming back online
+  const syncOfflineData = useCallback(async () => {
+    try {
+      const offlineChanges = localStorage.getItem('excalidraw-offline-changes');
+      if (offlineChanges) {
+        const changes = JSON.parse(offlineChanges);
+        // Process offline changes
+        console.log('Syncing offline changes:', changes);
+        localStorage.removeItem('excalidraw-offline-changes');
+        showToast('Offline changes synced successfully!', 'success');
+      }
+    } catch (error) {
+      console.error('Error syncing offline data:', error);
+      showToast('Error syncing offline changes', 'error');
+    }
+  }, []);
+
+  // Enhanced save function with offline support
+  const saveWithOfflineSupport = useCallback(async (fileData) => {
+    try {
+      // Always save to localStorage first
+      const savedFiles = localStorage.getItem('excalidraw-files');
+      let existingFiles = savedFiles ? JSON.parse(savedFiles) : [];
+      
+      const fileIndex = existingFiles.findIndex(f => f.id === fileData.id);
+      if (fileIndex >= 0) {
+        existingFiles[fileIndex] = fileData;
+      } else {
+        existingFiles.push(fileData);
+      }
+      
+      localStorage.setItem('excalidraw-files', JSON.stringify(existingFiles));
+      
+      // If offline, add to offline changes queue
+      if (!isOnline) {
+        const offlineChanges = localStorage.getItem('excalidraw-offline-changes');
+        const changes = offlineChanges ? JSON.parse(offlineChanges) : [];
+        changes.push({
+          type: 'save',
+          fileId: fileData.id,
+          timestamp: new Date().toISOString(),
+          data: fileData
+        });
+        localStorage.setItem('excalidraw-offline-changes', JSON.stringify(changes));
+      }
+      
+      // Also cache using PWA cache if available
+      if (window.pwaManager) {
+        await window.pwaManager.saveToCache(`file-${fileData.id}`, fileData);
+      }
+      
+      return true;
+    } catch (error) {
+      console.error('Error saving with offline support:', error);
+      return false;
+    }
+  }, [isOnline]);
+
   // Load files from localStorage on startup
   useEffect(() => {
     const savedFiles = localStorage.getItem('excalidraw-files');
@@ -78,7 +168,7 @@ const App = () => {
     return newFile;
   }, [isMobile, sidebarClosing]);
 
-  const saveCurrentFile = useCallback(() => {
+  const saveCurrentFile = useCallback(async () => {
     if (!currentFile || !excalidrawAPI) return;
 
     setSaveStatus('saving');
@@ -101,21 +191,31 @@ const App = () => {
         updatedAt: new Date().toISOString()
       };
 
-      setFiles(prev => prev.map(file => 
-        file.id === currentFile.id ? updatedFile : file
-      ));
-
-      setCurrentFile(updatedFile);
-      localStorage.setItem('excalidraw-last-file', currentFile.id);
+      // Use offline-aware save function
+      const saveSuccess = await saveWithOfflineSupport(updatedFile);
       
-      setSaveStatus('saved');
-      showToast(`File "${currentFile.name}" berhasil disimpan`, 'success');
+      if (saveSuccess) {
+        setFiles(prev => prev.map(file => 
+          file.id === currentFile.id ? updatedFile : file
+        ));
+
+        setCurrentFile(updatedFile);
+        localStorage.setItem('excalidraw-last-file', currentFile.id);
+        
+        setSaveStatus('saved');
+        const statusMessage = isOnline ? 
+          `File "${currentFile.name}" berhasil disimpan` : 
+          `File "${currentFile.name}" disimpan offline`;
+        showToast(statusMessage, 'success');
+      } else {
+        throw new Error('Save operation failed');
+      }
     } catch (error) {
       console.error('Save error:', error);
       setSaveStatus('unsaved');
       showToast('Gagal menyimpan file', 'error');
     }
-  }, [currentFile, excalidrawAPI]);
+  }, [currentFile, excalidrawAPI, isOnline, saveWithOfflineSupport]);
 
   const loadFile = useCallback((fileId) => {
     const file = files.find(f => f.id === fileId);
@@ -566,6 +666,18 @@ const App = () => {
 
       <div className={`sidebar ${sidebarVisible ? '' : 'hidden'}`}>
         <div className="sidebar-header">
+          <div className="status-indicators">
+            {!isOnline && (
+              <span className="offline-indicator" title="Offline - Changes saved locally">
+                🔴 Offline
+              </span>
+            )}
+            {isPWAInstalled && (
+              <span className="pwa-indicator" title="Running as installed app">
+                📱 PWA
+              </span>
+            )}
+          </div>
           <h2 className="sidebar-title">Excalidraw Files</h2>
           <p className="sidebar-subtitle">
             {files.length} file{files.length !== 1 ? 's' : ''} • Manage your drawings

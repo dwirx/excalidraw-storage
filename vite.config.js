@@ -12,4 +12,17 @@ export default defineConfig({
   define: {
     'process.env': {},
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom'],
+          excalidraw: ['@excalidraw/excalidraw']
+        }
+      }
+    }
+  },
+  // PWA Configuration
+  publicDir: 'public',
+  base: '/',
 })
