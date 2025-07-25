@@ -52,13 +52,6 @@
         flex: 1;
         background-color: #fff;
       }
-      .file-list {
-        flex: 1;
-        overflow-y: auto;
-        overflow-x: visible;
-        padding: 4px 6px;
-        background: rgba(0,0,0,0.1);
-      }
       
       .file-item {
         padding: 6px 8px;
@@ -131,33 +124,45 @@
       /* Sidebar Toggle Button */
       .sidebar-toggle {
         position: fixed;
-        top: 8px;
-        left: 8px;
+        top: 4px;
+        left: 4px;
         z-index: 10001;
         background: linear-gradient(135deg, #404040, #505050);
         border: 1px solid #606060;
         color: #fff;
-        width: 32px;
-        height: 32px;
-        border-radius: 6px;
+        width: 24px;
+        height: 24px;
+        border-radius: 4px;
         cursor: pointer;
-        font-size: 14px;
+        font-size: 10px;
         display: flex;
         align-items: center;
         justify-content: center;
         transition: all 0.3s ease;
-        box-shadow: 0 2px 12px rgba(0,0,0,0.4);
-        backdrop-filter: blur(8px);
+        box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+        backdrop-filter: blur(6px);
+        opacity: 0.8;
       }
       
       .sidebar-toggle:hover {
         background: linear-gradient(135deg, #555555, #666666);
-        transform: scale(1.1);
-        box-shadow: 0 4px 16px rgba(0,0,0,0.6);
+        transform: scale(1.15);
+        box-shadow: 0 3px 12px rgba(0,0,0,0.5);
+        opacity: 1;
       }
       
       .sidebar-toggle.sidebar-visible {
-        left: 168px;
+        left: 4px; /* Keep in same position when sidebar is visible */
+        background: linear-gradient(135deg, #0066cc, #0078ff);
+        border-color: #0099ff;
+        opacity: 1;
+        transform: scale(1.05);
+        box-shadow: 0 2px 8px rgba(0,102,204,0.4);
+      }
+      
+      .sidebar-toggle.sidebar-visible:hover {
+        transform: scale(1.15);
+        box-shadow: 0 3px 12px rgba(0,102,204,0.6);
       }
       
       /* Responsive Sidebar */
@@ -167,11 +172,13 @@
         border-right: 1px solid #404040;
         display: flex;
         flex-direction: column;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
         position: relative;
         z-index: 1000;
         overflow: visible;
         box-shadow: 2px 0 12px rgba(0,0,0,0.3);
+        transform: translateX(0);
+        opacity: 1;
       }
       
       .sidebar.hidden {
@@ -180,6 +187,7 @@
         min-width: 0;
         overflow: hidden;
         box-shadow: none;
+        opacity: 0;
       }
       
       .sidebar-header {
@@ -188,6 +196,15 @@
         background: linear-gradient(135deg, #2d2d2d, #323232);
         border-radius: 0 0 8px 8px;
         margin-bottom: 2px;
+        transition: opacity 0.4s ease 0.1s, transform 0.4s ease 0.1s;
+        transform: translateY(0);
+        opacity: 1;
+      }
+      
+      .sidebar.hidden .sidebar-header {
+        opacity: 0;
+        transform: translateY(-10px);
+        transition-delay: 0s;
       }
       
       .sidebar-title {
@@ -215,6 +232,15 @@
         position: relative;
         border-radius: 0 0 6px 6px;
         margin-bottom: 2px;
+        transition: opacity 0.4s ease 0.15s, transform 0.4s ease 0.15s;
+        transform: translateY(0);
+        opacity: 1;
+      }
+      
+      .sidebar.hidden .sidebar-toolbar {
+        opacity: 0;
+        transform: translateY(-10px);
+        transition-delay: 0s;
       }
       
       .current-file-info {
@@ -367,6 +393,32 @@
         background: linear-gradient(135deg, #2a2a2a, #2f2f2f);
         border-radius: 0 0 6px 6px;
         margin-bottom: 2px;
+        transition: opacity 0.4s ease 0.2s, transform 0.4s ease 0.2s;
+        transform: translateY(0);
+        opacity: 1;
+      }
+      
+      .sidebar.hidden .new-file-section {
+        opacity: 0;
+        transform: translateY(-10px);
+        transition-delay: 0s;
+      }
+      
+      .file-list {
+        flex: 1;
+        overflow-y: auto;
+        overflow-x: visible;
+        padding: 4px 6px;
+        background: rgba(0,0,0,0.1);
+        transition: opacity 0.4s ease 0.25s, transform 0.4s ease 0.25s;
+        transform: translateY(0);
+        opacity: 1;
+      }
+      
+      .sidebar.hidden .file-list {
+        opacity: 0;
+        transform: translateY(-10px);
+        transition-delay: 0s;
       }
       
       .new-file-form {
@@ -450,7 +502,7 @@
         flex: 1;
         display: flex;
         flex-direction: column;
-        transition: margin-left 0.3s ease;
+        transition: margin-left 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
       }
       
       .main-content.sidebar-hidden {
@@ -460,7 +512,8 @@
       /* Mobile Responsiveness */
       @media (max-width: 768px) {
         .sidebar {
-          width: 160px;
+          width: 85vw;
+          max-width: 300px;
           position: fixed;
           left: 0;
           top: 0;
@@ -468,144 +521,320 @@
           z-index: 1002;
           box-shadow: 4px 0 20px rgba(0,0,0,0.5);
           backdrop-filter: blur(10px);
+          transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+                      opacity 0.3s ease,
+                      box-shadow 0.3s ease;
+          transform: translateX(0);
+          opacity: 1;
         }
         
         .sidebar.hidden {
           transform: translateX(-100%);
+          opacity: 0;
+          box-shadow: none;
+        }
+        
+        .sidebar:not(.hidden) {
+          transform: translateX(0);
+          opacity: 1;
         }
         
         .sidebar-toggle {
-          left: 6px;
-          top: 6px;
-          width: 36px;
-          height: 36px;
-          font-size: 16px;
-          border-radius: 8px;
+          left: 4px;
+          top: 4px;
+          width: 22px;
+          height: 22px;
+          font-size: 10px;
+          border-radius: 3px;
+          box-shadow: 0 1px 6px rgba(0,0,0,0.4);
+          opacity: 0.75;
+          transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+          transform: scale(1);
         }
         
         .sidebar-toggle.sidebar-visible {
-          left: 134px;
+          left: 4px; /* Stay in same position */
+          background: linear-gradient(135deg, #0066cc, #0078ff);
+          opacity: 1;
+          transform: scale(1.05);
+          box-shadow: 0 2px 8px rgba(0,102,204,0.4);
+        }
+        
+        .sidebar-toggle:hover {
+          transform: scale(1.1);
+          opacity: 1;
         }
         
         .main-content {
           margin-left: 0;
+          width: 100%;
+          transition: none;
+        }
+        
+        .excalidraw-container {
+          padding-top: 28px; /* Reduced space for smaller toggle button */
+          min-height: calc(100vh - 28px);
+          position: relative;
+        }
+        
+        .sidebar-header {
+          padding: 15px 20px;
+        }
+        
+        .sidebar-toolbar {
+          padding: 10px 15px;
+        }
+        
+        .new-file-section {
+          padding: 10px 15px;
+        }
+        
+        .file-list {
+          padding: 5px 15px;
         }
         
         .sidebar-title {
-          font-size: 13px;
+          font-size: 18px;
         }
         
         .sidebar-subtitle {
-          font-size: 9px;
+          font-size: 14px;
         }
         
         .btn.secondary {
-          font-size: 9px;
-          padding: 3px 4px;
+          font-size: 14px;
+          padding: 10px 15px;
+          min-height: 44px;
         }
         
         .new-file-input {
-          font-size: 10px;
-          padding: 4px 5px;
+          font-size: 16px;
+          padding: 12px 15px;
+          min-height: 44px;
         }
         
         .new-file-button {
-          font-size: 9px;
-          padding: 4px 5px;
+          font-size: 16px;
+          padding: 12px 15px;
+          min-height: 44px;
         }
         
         .file-name {
-          font-size: 11px;
+          font-size: 16px;
+        }
+        
+        .file-item {
+          padding: 15px 20px;
+          margin: 5px 0;
         }
         
         .current-file-info {
-          font-size: 10px;
-          padding: 3px 4px;
+          font-size: 14px;
+          padding: 10px 12px;
+        }
+        
+        .dropdown-menu {
+          min-width: 180px;
+        }
+        
+        .dropdown-menu button {
+          padding: 15px 20px;
+          font-size: 16px;
         }
       }
       
       @media (max-width: 480px) {
         .sidebar {
-          width: 140px;
+          width: 80vw;
+          max-width: 280px;
         }
         
         .sidebar-toggle {
-          width: 40px;
-          height: 40px;
-          font-size: 18px;
-          border-radius: 10px;
+          width: 20px;
+          height: 20px;
+          font-size: 9px;
+          border-radius: 3px;
+          left: 3px;
+          top: 3px;
+          opacity: 0.7;
         }
         
         .sidebar-toggle.sidebar-visible {
-          left: 114px;
+          left: 3px; /* Keep in same position */
+          opacity: 1;
+        }
+        
+        .sidebar-header {
+          padding: 12px 15px;
+        }
+        
+        .sidebar-toolbar {
+          padding: 8px 12px;
+        }
+        
+        .new-file-section {
+          padding: 8px 12px;
+        }
+        
+        .file-list {
+          padding: 5px 12px;
         }
         
         .sidebar-title {
-          font-size: 12px;
+          font-size: 16px;
         }
         
         .sidebar-subtitle {
-          font-size: 8px;
+          font-size: 12px;
         }
         
         .btn.secondary {
-          font-size: 8px;
-          padding: 2px 3px;
+          font-size: 13px;
+          padding: 8px 12px;
+          min-height: 40px;
         }
         
         .toolbar-group {
           flex-direction: column;
-          gap: 2px;
+          gap: 6px;
         }
         
         .new-file-input {
-          font-size: 9px;
-          padding: 3px 4px;
+          font-size: 16px;
+          padding: 10px 12px;
+          min-height: 40px;
         }
         
         .new-file-button {
-          font-size: 8px;
-          padding: 3px 4px;
+          font-size: 14px;
+          padding: 10px 12px;
+          min-height: 40px;
         }
         
         .file-name {
-          font-size: 10px;
+          font-size: 14px;
         }
         
         .file-item {
-          padding: 4px 6px;
+          padding: 12px 15px;
+          margin: 3px 0;
         }
         
         .current-file-info {
-          font-size: 9px;
-          padding: 2px 3px;
+          font-size: 12px;
+          padding: 8px 10px;
+        }
+        
+        .file-action-btn {
+          padding: 8px 10px;
+          font-size: 14px;
+          min-width: 36px;
+          min-height: 36px;
+        }
+        
+        .excalidraw-container {
+          padding-top: 26px; /* Less space for smaller toggle button */
+          min-height: calc(100vh - 26px);
         }
       }
       
       /* Extra small screens */
       @media (max-width: 360px) {
         .sidebar {
-          width: 120px;
+          width: 75vw;
+          max-width: 260px;
+        }
+        
+        .sidebar-toggle {
+          width: 18px;
+          height: 18px;
+          font-size: 8px;
+          left: 2px;
+          top: 2px;
+          border-radius: 2px;
+          opacity: 0.65;
         }
         
         .sidebar-toggle.sidebar-visible {
-          left: 94px;
+          left: 2px; /* Keep in same position */
+          opacity: 1;
         }
         
         .sidebar-header {
-          padding: 6px 8px;
+          padding: 10px 12px;
         }
         
         .sidebar-toolbar {
-          padding: 4px 6px;
+          padding: 6px 10px;
         }
         
         .new-file-section {
-          padding: 4px 6px;
+          padding: 6px 10px;
         }
         
         .file-list {
-          padding: 2px 4px;
+          padding: 4px 10px;
+        }
+        
+        .file-item {
+          padding: 10px 12px;
+        }
+        
+        .sidebar-title {
+          font-size: 14px;
+        }
+        
+        .sidebar-subtitle {
+          font-size: 10px;
+        }
+        
+        .btn.secondary {
+          font-size: 12px;
+          padding: 6px 10px;
+          min-height: 36px;
+        }
+        
+        .new-file-input {
+          font-size: 16px;
+          padding: 8px 10px;
+        }
+        
+        .new-file-button {
+          font-size: 13px;
+          padding: 8px 10px;
+        }
+        
+        .excalidraw-container {
+          padding-top: 22px; /* Space for smaller toggle button */
+          min-height: calc(100vh - 22px);
+        }
+      }
+      
+      /* Very small screens */
+      @media (max-width: 320px) {
+        .sidebar {
+          width: 70vw;
+          max-width: 240px;
+        }
+        
+        .sidebar-toggle {
+          width: 16px;
+          height: 16px;
+          font-size: 7px;
+          left: 2px;
+          top: 2px;
+          border-radius: 2px;
+          opacity: 0.6;
+        }
+        
+        .sidebar-toggle.sidebar-visible {
+          left: 2px;
+          opacity: 1;
+        }
+        
+        .excalidraw-container {
+          padding-top: 20px;
+          min-height: calc(100vh - 20px);
         }
       }
       
@@ -618,6 +847,17 @@
       @keyframes spin {
         from { transform: rotate(0deg); }
         to { transform: rotate(360deg); }
+      }
+      
+      @keyframes slideInRight {
+        from {
+          transform: translateX(100%);
+          opacity: 0;
+        }
+        to {
+          transform: translateX(0);
+          opacity: 1;
+        }
       }
       
       /* Smooth fade-in animation for sidebar */
@@ -641,6 +881,52 @@
           transform: translateX(-100%);
           opacity: 0;
         }
+      }
+      
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(-10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      
+      @keyframes fadeOut {
+        from {
+          opacity: 1;
+          transform: translateY(0);
+        }
+        to {
+          opacity: 0;
+          transform: translateY(-10px);
+        }
+      }
+      
+      /* Apply animations to sidebar content */
+      .sidebar:not(.hidden) .sidebar-header,
+      .sidebar:not(.hidden) .sidebar-toolbar,
+      .sidebar:not(.hidden) .new-file-section,
+      .sidebar:not(.hidden) .file-list {
+        animation: fadeIn 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+      }
+      
+      .sidebar:not(.hidden) .sidebar-header {
+        animation-delay: 0.1s;
+      }
+      
+      .sidebar:not(.hidden) .sidebar-toolbar {
+        animation-delay: 0.15s;
+      }
+      
+      .sidebar:not(.hidden) .new-file-section {
+        animation-delay: 0.2s;
+      }
+      
+      .sidebar:not(.hidden) .file-list {
+        animation-delay: 0.25s;
       }
       
       /* Pulse animation for active states */
@@ -691,14 +977,24 @@
       /* Touch-friendly improvements */
       @media (hover: none) and (pointer: coarse) {
         .sidebar-toggle {
-          width: 44px;
-          height: 44px;
-          font-size: 18px;
+          width: 28px;
+          height: 28px;
+          font-size: 12px;
+          touch-action: manipulation;
+          opacity: 0.8;
+          left: 4px;
+          top: 4px;
+        }
+        
+        .sidebar-toggle:active {
+          transform: scale(0.9);
+          opacity: 1;
         }
         
         .file-item {
-          padding: 12px 8px;
-          margin: 3px 0;
+          padding: 12px 10px;
+          margin: 4px 0;
+          touch-action: manipulation;
         }
         
         .file-actions {
@@ -706,30 +1002,46 @@
         }
         
         .file-action-btn {
-          padding: 6px 8px;
-          font-size: 12px;
-          min-width: 32px;
-          min-height: 32px;
+          padding: 10px 12px;
+          font-size: 14px;
+          min-width: 40px;
+          min-height: 40px;
           display: flex;
           align-items: center;
           justify-content: center;
+          touch-action: manipulation;
         }
         
         .btn.secondary {
-          padding: 8px 10px;
-          font-size: 11px;
-          min-height: 36px;
+          padding: 10px 12px;
+          font-size: 13px;
+          min-height: 44px;
+          touch-action: manipulation;
         }
         
         .new-file-input {
-          padding: 8px 10px;
-          font-size: 12px;
+          padding: 10px 12px;
+          font-size: 16px;
+          min-height: 44px;
         }
         
         .new-file-button {
-          padding: 8px 10px;
-          font-size: 11px;
-          min-height: 36px;
+          padding: 10px 12px;
+          font-size: 13px;
+          min-height: 44px;
+          touch-action: manipulation;
+        }
+        
+        /* Prevent zoom on input focus on iOS */
+        input, select, textarea, button {
+          font-size: 16px !important;
+        }
+        
+        /* Better spacing for touch */
+        .dropdown-menu button {
+          padding: 12px 16px;
+          font-size: 14px;
+          min-height: 44px;
         }
       }
       
@@ -749,6 +1061,185 @@
         
         .new-file-section {
           background: linear-gradient(135deg, #1f1f1f, #242424);
+        }
+      }
+      
+      /* Additional mobile improvements */
+      @media (max-width: 768px) {
+        /* Overlay for sidebar when open */
+        .sidebar-overlay {
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100vw;
+          height: 100vh;
+          background: rgba(0, 0, 0, 0.5);
+          z-index: 999;
+          opacity: 0;
+          visibility: hidden;
+          transition: opacity 0.3s ease, visibility 0.3s ease;
+          backdrop-filter: blur(2px);
+        }
+        
+        .sidebar-overlay.visible {
+          opacity: 1;
+          visibility: visible;
+        }
+        
+        /* Ensure main content doesn't overlap sidebar */
+        .main-content {
+          position: relative;
+          z-index: 1;
+        }
+        
+        /* Prevent body scroll when sidebar is open */
+        body.sidebar-open {
+          overflow: hidden;
+          transition: overflow 0.3s ease;
+        }
+        
+        /* Better toggle button positioning and styling */
+        .sidebar-toggle {
+          opacity: 0.9;
+          backdrop-filter: blur(10px);
+          transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+        
+        .sidebar-toggle:active {
+          transform: scale(0.95);
+        }
+        
+        /* Add subtle animation to indicate interaction */
+        .sidebar-toggle::after {
+          content: '';
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          width: 0;
+          height: 0;
+          background: rgba(255, 255, 255, 0.3);
+          border-radius: 50%;
+          transform: translate(-50%, -50%);
+          transition: width 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94), 
+                      height 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+          pointer-events: none;
+        }
+        
+        .sidebar-toggle:active::after {
+          width: 100%;
+          height: 100%;
+        }
+      }
+      
+      /* Landscape orientation adjustments */
+      @media (max-width: 768px) and (orientation: landscape) {
+        .sidebar {
+          width: 350px;
+        }
+        
+        .excalidraw-container {
+          padding-top: 28px;
+        }
+      }
+      
+      /* Very small screens (iPhone SE, etc.) */
+      @media (max-width: 320px) {
+        .sidebar {
+          width: 280px;
+        }
+        
+        .file-item {
+          padding: 12px 10px;
+        }
+        
+        .sidebar-header {
+          padding: 10px 12px;
+        }
+        
+        .sidebar-toolbar {
+          padding: 8px 10px;
+        }
+        
+        .new-file-section {
+          padding: 8px 10px;
+        }
+      }
+      
+      /* High DPI displays */
+      @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+        .sidebar-toggle {
+          border-width: 0.5px;
+        }
+        
+        .file-item {
+          border-width: 0.5px;
+        }
+        
+        .btn {
+          border-width: 0.5px;
+        }
+      }
+      
+      /* Accessibility improvements */
+      @media (prefers-reduced-motion: reduce) {
+        *, *::before, *::after {
+          animation-duration: 0.01ms !important;
+          animation-iteration-count: 1 !important;
+          transition-duration: 0.01ms !important;
+          scroll-behavior: auto !important;
+        }
+        
+        .sidebar {
+          transition: none !important;
+        }
+        
+        .sidebar-toggle {
+          transition: none !important;
+        }
+        
+        .file-item {
+          transition: none !important;
+        }
+        
+        .sidebar-header,
+        .sidebar-toolbar,
+        .new-file-section,
+        .file-list {
+          transition: none !important;
+          animation: none !important;
+        }
+        
+        .sidebar-overlay {
+          transition: none !important;
+        }
+      }
+      
+      /* Focus styles for keyboard navigation */
+      .sidebar-toggle:focus,
+      .btn:focus,
+      .file-item:focus,
+      .new-file-input:focus,
+      .file-action-btn:focus {
+        outline: 2px solid #0099ff;
+        outline-offset: 2px;
+      }
+      
+      /* Better contrast for accessibility */
+      @media (prefers-contrast: high) {
+        .file-item {
+          border: 2px solid #666;
+        }
+        
+        .file-item.active {
+          border-color: #fff;
+        }
+        
+        .btn {
+          border: 2px solid #666;
+        }
+        
+        .sidebar-toggle {
+          border: 2px solid #666;
         }
       }
     </style>

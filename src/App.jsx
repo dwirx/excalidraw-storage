@@ -12,6 +12,8 @@ const App = () => {
   const [sidebarVisible, setSidebarVisible] = useState(true);
   const [showExportDropdown, setShowExportDropdown] = useState(false);
   const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
+  const [isMobile, setIsMobile] = useState(false);
+  const [sidebarClosing, setSidebarClosing] = useState(false);
   const exportButtonRef = useRef(null);
   // Load files from localStorage on startup
   useEffect(() => {
@@ -63,9 +65,18 @@ const App = () => {
     setCurrentFile(newFile);
     setInitialData({ elements: [], appState: {} });
     setSaveStatus('saved');
+    
+    // Auto-close sidebar on mobile after creating file (with delay)
+    if (isMobile && !sidebarClosing) {
+      setSidebarClosing(true);
+      setTimeout(() => {
+        setSidebarVisible(false);
+        setSidebarClosing(false);
+      }, 500);
+    }
 
     return newFile;
-  }, []);
+  }, [isMobile, sidebarClosing]);
 
   const saveCurrentFile = useCallback(() => {
     if (!currentFile || !excalidrawAPI) return;
@@ -118,7 +129,16 @@ const App = () => {
     setSaveStatus('saved');
 
     localStorage.setItem('excalidraw-last-file', fileId);
-  }, [files]);
+    
+    // Auto-close sidebar on mobile after selecting file (with delay to show selection)
+    if (isMobile && !sidebarClosing) {
+      setSidebarClosing(true);
+      setTimeout(() => {
+        setSidebarVisible(false);
+        setSidebarClosing(false);
+      }, 500); // Longer delay to see selection
+    }
+  }, [files, isMobile, sidebarClosing]);
 
   const deleteFile = useCallback((fileId) => {
     const file = files.find(f => f.id === fileId);
@@ -360,7 +380,7 @@ const App = () => {
       // Ctrl+B to toggle sidebar
       if (e.ctrlKey && e.key === 'b') {
         e.preventDefault();
-        setSidebarVisible(prev => !prev);
+        handleSidebarToggle();
       }
     };
 
@@ -385,14 +405,58 @@ const App = () => {
     return () => window.removeEventListener('createNewFile', handleCreateNewFileEvent);
   }, [createNewFile]);
 
+  // Initial mobile detection
+  useEffect(() => {
+    const mobile = window.innerWidth <= 768;
+    setIsMobile(mobile);
+    
+    // Only auto-hide sidebar on initial load for mobile
+    if (mobile) {
+      setSidebarVisible(false);
+    }
+  }, []); // Run only once on mount
+
+  // Manage body class for mobile sidebar and detect mobile
+  useEffect(() => {
+    const handleResize = () => {
+      const mobile = window.innerWidth <= 768;
+      setIsMobile(mobile);
+      
+      if (mobile && sidebarVisible) {
+        document.body.classList.add('sidebar-open');
+      } else {
+        document.body.classList.remove('sidebar-open');
+      }
+    };
+
+    handleResize(); // Initial call
+    window.addEventListener('resize', handleResize);
+    
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      document.body.classList.remove('sidebar-open');
+    };
+  }, [sidebarVisible]);
+
+  // Auto-hide sidebar on mobile when clicking outside
+  useEffect(() => {
+    const handleResize = () => {
+      const isMobile = window.innerWidth <= 768;
+      if (!isMobile && sidebarVisible) {
+        document.body.classList.remove('sidebar-open');
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [sidebarVisible]);
+
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
-      console.log('Click outside detected, showExportDropdown:', showExportDropdown);
       if (showExportDropdown && exportButtonRef.current && 
           !exportButtonRef.current.contains(event.target) &&
           !event.target.closest('.dropdown-menu')) {
-        console.log('Closing dropdown');
         setShowExportDropdown(false);
       }
     };
@@ -438,9 +502,17 @@ const App = () => {
     event.target.value = '';
   };
 
-  const handleExportDropdownToggle = () => {
-    console.log('Export dropdown toggle clicked, current state:', showExportDropdown);
+  // Handle sidebar toggle with mobile optimization
+  const handleSidebarToggle = useCallback(() => {
+    if (sidebarClosing) return; // Prevent rapid toggle
     
+    setSidebarVisible(prev => !prev);
+    
+    // Reset any pending close actions
+    setSidebarClosing(false);
+  }, [sidebarClosing]);
+
+  const handleExportDropdownToggle = () => {
     if (!showExportDropdown && exportButtonRef.current) {
       const rect = exportButtonRef.current.getBoundingClientRect();
       const dropdownWidth = 140; // min-width dari CSS
@@ -458,7 +530,6 @@ const App = () => {
         top = rect.top - dropdownHeight - 4;
       }
       
-      console.log('Setting dropdown position:', { top, left });
       setDropdownPosition({ top, left });
     }
     setShowExportDropdown(!showExportDropdown);
@@ -466,12 +537,31 @@ const App = () => {
 
   return (
     <div className="app-container">
+      {/* Overlay for mobile when sidebar is open - only show on mobile */}
+      {sidebarVisible && isMobile && (
+        <div 
+          className="sidebar-overlay visible"
+          onClick={() => setSidebarVisible(false)}
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100vw',
+            height: '100vh',
+            background: 'rgba(0, 0, 0, 0.5)',
+            zIndex: 999,
+            display: 'block'
+          }}
+        />
+      )}
+      
       <button 
         className={`sidebar-toggle ${sidebarVisible ? 'sidebar-visible' : ''}`}
-        onClick={() => setSidebarVisible(!sidebarVisible)}
+        onClick={handleSidebarToggle}
         title={`${sidebarVisible ? 'Hide' : 'Show'} Sidebar (Ctrl+B)`}
+        aria-label={`${sidebarVisible ? 'Hide' : 'Show'} Sidebar`}
       >
-        {sidebarVisible ? '◀' : '▶'}
+        {sidebarVisible ? '✕' : '☰'}
       </button>
 
       <div className={`sidebar ${sidebarVisible ? '' : 'hidden'}`}>
@@ -501,6 +591,7 @@ const App = () => {
               className={getSaveButtonClass()}
               onClick={saveCurrentFile}
               disabled={!currentFile || saveStatus === 'saving'}
+              aria-label="Save current file"
             >
               {getSaveButtonText()}
             </button>
@@ -509,6 +600,7 @@ const App = () => {
               <button 
                 className="btn secondary"
                 onClick={() => document.getElementById('file-input').click()}
+                aria-label="Import file"
               >
                 📁 Import
               </button>
@@ -519,12 +611,16 @@ const App = () => {
                   className="btn secondary"
                   onClick={handleExportDropdownToggle}
                   disabled={!currentFile}
+                  aria-label="Export options"
+                  aria-expanded={showExportDropdown}
+                  aria-haspopup="menu"
                 >
                   📤 Export ▼
                 </button>
                 {showExportDropdown && (
                   <div 
                     className="dropdown-menu"
+                    role="menu"
                     style={{
                       position: 'fixed',
                       top: `${dropdownPosition.top}px`,
@@ -538,13 +634,22 @@ const App = () => {
                       display: 'block'
                     }}
                   >
-                    <button onClick={() => { exportFile('png'); setShowExportDropdown(false); }}>
+                    <button 
+                      onClick={() => { exportFile('png'); setShowExportDropdown(false); }}
+                      role="menuitem"
+                    >
                       🖼️ Export as PNG
                     </button>
-                    <button onClick={() => { exportFile('svg'); setShowExportDropdown(false); }}>
+                    <button 
+                      onClick={() => { exportFile('svg'); setShowExportDropdown(false); }}
+                      role="menuitem"
+                    >
                       📄 Export as SVG
                     </button>
-                    <button onClick={() => { exportFile('json'); setShowExportDropdown(false); }}>
+                    <button 
+                      onClick={() => { exportFile('json'); setShowExportDropdown(false); }}
+                      role="menuitem"
+                    >
                       💾 Export as JSON
                     </button>
                   </div>

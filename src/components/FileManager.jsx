@@ -62,6 +62,11 @@ const FileManager = ({
               value={newFileName}
               onChange={(e) => setNewFileName(e.target.value)}
               maxLength={50}
+              autoComplete="off"
+              autoCapitalize="none"
+              autoCorrect="off"
+              spellCheck="false"
+              inputMode="text"
             />
             {newFileName.trim() && (
               <span className="file-extension">.excalidraw</span>
@@ -127,6 +132,11 @@ const FileManager = ({
                       }}
                       onClick={(e) => e.stopPropagation()}
                       autoFocus
+                      autoComplete="off"
+                      autoCapitalize="none"
+                      autoCorrect="off"
+                      spellCheck="false"
+                      inputMode="text"
                       style={{
                         background: 'transparent',
                         border: '1px solid #666',
@@ -173,7 +183,8 @@ const FileManager = ({
                         e.stopPropagation();
                         handleStartRename(file);
                       }}
-                      title="Rename"
+                      title="Rename file"
+                      aria-label={`Rename ${file.name}`}
                     >
                       ✏️
                     </button>
@@ -183,7 +194,8 @@ const FileManager = ({
                         e.stopPropagation();
                         onDuplicateFile(file.id);
                       }}
-                      title="Duplicate"
+                      title="Duplicate file"
+                      aria-label={`Duplicate ${file.name}`}
                     >
                       📋
                     </button>
@@ -193,7 +205,8 @@ const FileManager = ({
                         e.stopPropagation();
                         onDeleteFile(file.id);
                       }}
-                      title="Delete"
+                      title="Delete file"
+                      aria-label={`Delete ${file.name}`}
                       style={{ color: '#ff6b6b' }}
                     >
                       🗑️
