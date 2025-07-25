@@ -388,9 +388,11 @@ const App = () => {
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
+      console.log('Click outside detected, showExportDropdown:', showExportDropdown);
       if (showExportDropdown && exportButtonRef.current && 
           !exportButtonRef.current.contains(event.target) &&
           !event.target.closest('.dropdown-menu')) {
+        console.log('Closing dropdown');
         setShowExportDropdown(false);
       }
     };
@@ -437,12 +439,27 @@ const App = () => {
   };
 
   const handleExportDropdownToggle = () => {
+    console.log('Export dropdown toggle clicked, current state:', showExportDropdown);
+    
     if (!showExportDropdown && exportButtonRef.current) {
       const rect = exportButtonRef.current.getBoundingClientRect();
-      setDropdownPosition({
-        top: rect.bottom + 2,
-        left: rect.left
-      });
+      const dropdownWidth = 140; // min-width dari CSS
+      const dropdownHeight = 120; // estimasi tinggi dropdown
+      
+      let top = rect.bottom + 4;
+      let left = rect.left;
+      
+      // Pastikan dropdown tidak keluar dari viewport
+      if (left + dropdownWidth > window.innerWidth) {
+        left = window.innerWidth - dropdownWidth - 10;
+      }
+      
+      if (top + dropdownHeight > window.innerHeight) {
+        top = rect.top - dropdownHeight - 4;
+      }
+      
+      console.log('Setting dropdown position:', { top, left });
+      setDropdownPosition({ top, left });
     }
     setShowExportDropdown(!showExportDropdown);
   };
@@ -509,18 +526,26 @@ const App = () => {
                   <div 
                     className="dropdown-menu"
                     style={{
+                      position: 'fixed',
                       top: `${dropdownPosition.top}px`,
-                      left: `${dropdownPosition.left}px`
+                      left: `${dropdownPosition.left}px`,
+                      zIndex: 99999,
+                      background: '#2d2d2d',
+                      border: '1px solid #555',
+                      borderRadius: '6px',
+                      minWidth: '140px',
+                      boxShadow: '0 8px 32px rgba(0,0,0,0.8)',
+                      display: 'block'
                     }}
                   >
                     <button onClick={() => { exportFile('png'); setShowExportDropdown(false); }}>
-                      🖼️ PNG
+                      🖼️ Export as PNG
                     </button>
                     <button onClick={() => { exportFile('svg'); setShowExportDropdown(false); }}>
-                      📄 SVG
+                      📄 Export as SVG
                     </button>
                     <button onClick={() => { exportFile('json'); setShowExportDropdown(false); }}>
-                      💾 JSON
+                      💾 Export as JSON
                     </button>
                   </div>
                 )}
