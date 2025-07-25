@@ -11,6 +11,8 @@ const App = () => {
   const [initialData, setInitialData] = useState({ elements: [], appState: {} });
   const [sidebarVisible, setSidebarVisible] = useState(true);
   const [showExportDropdown, setShowExportDropdown] = useState(false);
+  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
+  const exportButtonRef = useRef(null);
   // Load files from localStorage on startup
   useEffect(() => {
     const savedFiles = localStorage.getItem('excalidraw-files');
@@ -383,6 +385,20 @@ const App = () => {
     return () => window.removeEventListener('createNewFile', handleCreateNewFileEvent);
   }, [createNewFile]);
 
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (showExportDropdown && exportButtonRef.current && 
+          !exportButtonRef.current.contains(event.target) &&
+          !event.target.closest('.dropdown-menu')) {
+        setShowExportDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showExportDropdown]);
+
   // Helper functions for toolbar UI
   const getSaveButtonText = () => {
     switch (saveStatus) {
@@ -418,6 +434,17 @@ const App = () => {
     }
     // Reset the input value so the same file can be selected again
     event.target.value = '';
+  };
+
+  const handleExportDropdownToggle = () => {
+    if (!showExportDropdown && exportButtonRef.current) {
+      const rect = exportButtonRef.current.getBoundingClientRect();
+      setDropdownPosition({
+        top: rect.bottom + 2,
+        left: rect.left
+      });
+    }
+    setShowExportDropdown(!showExportDropdown);
   };
 
   return (
@@ -471,14 +498,21 @@ const App = () => {
               
               <div className="export-dropdown">
                 <button 
+                  ref={exportButtonRef}
                   className="btn secondary"
-                  onClick={() => setShowExportDropdown(!showExportDropdown)}
+                  onClick={handleExportDropdownToggle}
                   disabled={!currentFile}
                 >
                   📤 Export ▼
                 </button>
                 {showExportDropdown && (
-                  <div className="dropdown-menu">
+                  <div 
+                    className="dropdown-menu"
+                    style={{
+                      top: `${dropdownPosition.top}px`,
+                      left: `${dropdownPosition.left}px`
+                    }}
+                  >
                     <button onClick={() => { exportFile('png'); setShowExportDropdown(false); }}>
                       🖼️ PNG
                     </button>
