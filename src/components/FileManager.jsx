@@ -52,22 +52,36 @@ const FileManager = ({
 
   return (
     <>
-      <form className="new-file-form" onSubmit={handleCreateFile}>
-        <input
-          type="text"
-          className="new-file-input"
-          placeholder="Nama file baru..."
-          value={newFileName}
-          onChange={(e) => setNewFileName(e.target.value)}
-        />
-        <button 
-          type="submit" 
-          className="new-file-button"
-          disabled={!newFileName.trim()}
-        >
-          ➕ Buat File Baru
-        </button>
-      </form>
+      <div className="new-file-section">
+        <form className="new-file-form" onSubmit={handleCreateFile}>
+          <div className="input-wrapper">
+            <input
+              type="text"
+              className="new-file-input"
+              placeholder="Masukkan nama file..."
+              value={newFileName}
+              onChange={(e) => setNewFileName(e.target.value)}
+              maxLength={50}
+            />
+            {newFileName.trim() && (
+              <span className="file-extension">.excalidraw</span>
+            )}
+          </div>
+          <button 
+            type="submit" 
+            className="new-file-button"
+            disabled={!newFileName.trim()}
+          >
+            <span className="btn-icon">➕</span>
+            <span className="btn-text">Buat File</span>
+          </button>
+        </form>
+        {newFileName.trim() && (
+          <div className="file-preview">
+            Preview: <strong>{newFileName.trim()}.excalidraw</strong>
+          </div>
+        )}
+      </div>
 
       <div className="file-list">
         {files.length === 0 ? (

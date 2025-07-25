@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Excalidraw, exportToCanvas, exportToSvg, exportToBlob } from '@excalidraw/excalidraw';
 import FileManager from './components/FileManager';
-import Toolbar from './components/Toolbar';
 import ToastContainer, { showToast } from './components/ToastContainer';
 
 const App = () => {
@@ -11,6 +10,7 @@ const App = () => {
   const [saveStatus, setSaveStatus] = useState('saved'); // 'saved', 'saving', 'unsaved'
   const [initialData, setInitialData] = useState({ elements: [], appState: {} });
   const [sidebarVisible, setSidebarVisible] = useState(true);
+  const [showExportDropdown, setShowExportDropdown] = useState(false);
   // Load files from localStorage on startup
   useEffect(() => {
     const savedFiles = localStorage.getItem('excalidraw-files');
@@ -383,6 +383,43 @@ const App = () => {
     return () => window.removeEventListener('createNewFile', handleCreateNewFileEvent);
   }, [createNewFile]);
 
+  // Helper functions for toolbar UI
+  const getSaveButtonText = () => {
+    switch (saveStatus) {
+      case 'saving':
+        return (
+          <>
+            <span className="saving-spinner">⟳</span> Saving...
+          </>
+        );
+      case 'unsaved':
+        return '💾 Save *';
+      default:
+        return '💾 Save';
+    }
+  };
+
+  const getSaveButtonClass = () => {
+    const baseClass = "btn primary";
+    switch (saveStatus) {
+      case 'saving':
+        return baseClass + " saving";
+      case 'unsaved':
+        return baseClass + " unsaved";
+      default:
+        return baseClass;
+    }
+  };
+
+  const handleImportFile = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      importFile(file);
+    }
+    // Reset the input value so the same file can be selected again
+    event.target.value = '';
+  };
+
   return (
     <div className="app-container">
       <button 
@@ -400,6 +437,64 @@ const App = () => {
             {files.length} file{files.length !== 1 ? 's' : ''} • Manage your drawings
           </p>
         </div>
+        
+        {/* Toolbar moved to sidebar */}
+        <div className="sidebar-toolbar">
+          <div className="current-file-info">
+            {currentFile ? (
+              <>
+                <span className="current-file-name">{currentFile.name}</span>
+                {saveStatus === 'unsaved' && <span className="unsaved-indicator">●</span>}
+                {saveStatus === 'saving' && <span className="saving-indicator">...</span>}
+              </>
+            ) : (
+              <span className="no-file">Tidak ada file terbuka</span>
+            )}
+          </div>
+          
+          <div className="toolbar-actions">
+            <button 
+              className={getSaveButtonClass()}
+              onClick={saveCurrentFile}
+              disabled={!currentFile || saveStatus === 'saving'}
+            >
+              {getSaveButtonText()}
+            </button>
+            
+            <div className="toolbar-group">
+              <button 
+                className="btn secondary"
+                onClick={() => document.getElementById('file-input').click()}
+              >
+                📁 Import
+              </button>
+              
+              <div className="export-dropdown">
+                <button 
+                  className="btn secondary"
+                  onClick={() => setShowExportDropdown(!showExportDropdown)}
+                  disabled={!currentFile}
+                >
+                  📤 Export ▼
+                </button>
+                {showExportDropdown && (
+                  <div className="dropdown-menu">
+                    <button onClick={() => { exportFile('png'); setShowExportDropdown(false); }}>
+                      🖼️ PNG
+                    </button>
+                    <button onClick={() => { exportFile('svg'); setShowExportDropdown(false); }}>
+                      📄 SVG
+                    </button>
+                    <button onClick={() => { exportFile('json'); setShowExportDropdown(false); }}>
+                      💾 JSON
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+        
         <FileManager
           files={files}
           currentFile={currentFile}
@@ -412,14 +507,6 @@ const App = () => {
       </div>
 
       <div className={`main-content ${!sidebarVisible ? 'sidebar-hidden' : ''}`}>
-        <Toolbar
-          currentFile={currentFile}
-          saveStatus={saveStatus}
-          onSave={saveCurrentFile}
-          onExport={exportFile}
-          onImport={importFile}
-        />
-        
         <div className="excalidraw-container">
           <Excalidraw
             key={currentFile?.id || 'empty'}
@@ -430,6 +517,16 @@ const App = () => {
           />
         </div>
       </div>
+      
+      {/* Hidden file input for import */}
+      <input
+        id="file-input"
+        type="file"
+        accept=".excalidraw,.json"
+        style={{ display: 'none' }}
+        onChange={handleImportFile}
+      />
+      
       <ToastContainer />
     </div>
   );
